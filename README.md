@@ -1,4 +1,4 @@
-# source-role-sheet-pack
+# pi-source-role-sheet
 
 Shareable Pi skill pack for sourcing a role into a recruiter-friendly Google Sheet.
 
@@ -42,8 +42,8 @@ Optional Gumloop environment variables:
 Clone the repo and run:
 
 ```bash
-git clone <YOUR-REPO-URL>
-cd source-role-sheet-pack
+git clone https://github.com/tbarnesShop/pi-source-role-sheet.git
+cd pi-source-role-sheet
 ./install.sh
 ```
 
@@ -93,8 +93,9 @@ Pull the latest repo changes and rerun:
 ## Repo structure
 
 ```text
-source-role-sheet-pack/
+pi-source-role-sheet/
 ├── README.md
+├── LICENSE
 ├── install.sh
 ├── .env.example
 ├── agents/
