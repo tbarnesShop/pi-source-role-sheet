@@ -1,6 +1,6 @@
 ---
 name: source-role-sheet
-description: Run an end-to-end recruiting sourcing workflow that turns a role brief into batched prospects, resolves public LinkedIn profile URLs, optionally enriches verified profiles via Gumloop, and creates or updates a Google Sheet using gws when Sheets wrappers are unreliable. Use when asked to source a role to a sheet, build a sourcing list, enrich an existing prospect sheet, or run repeatable sourcing ops.
+description: Run an end-to-end recruiting sourcing workflow that turns a role brief into batched prospects, resolves public LinkedIn profile URLs, enriches verified profiles via Gumloop, and creates or updates a Google Sheet. Use when asked to source a role to a sheet, build a sourcing list, or enrich an existing prospect sheet.
 ---
 
 # Source Role to Sheet
@@ -22,9 +22,22 @@ Use this skill when the user wants any of the following:
 1. Build a concise sourcing brief.
 2. Generate a defensible set of public-source prospects.
 3. Resolve LinkedIn profile URLs without hallucinating them.
-4. Optionally enrich verified LinkedIn profiles with Gumloop-derived profile data.
+4. Enrich verified LinkedIn profiles with Gumloop-derived profile data.
 5. Write a clean artifact to Google Sheets.
 6. Return the sheet URL, ranges written, counts, and verification gaps.
+
+## Required setup assumptions
+
+Before running this workflow, the environment should already have:
+- Shopify Pi available via `devx pi`
+- Google Workspace access in Pi for Sheets / Drive operations
+- Perplexity access for public LinkedIn URL discovery and verification
+- Gumloop configured for this pipeline:
+  - `GUMLOOP_API_KEY`
+  - `GUMLOOP_USER_ID`
+  - `GUMLOOP_SAVED_ITEM_ID`
+
+If Gumloop credentials are missing, stop and ask the user to finish setup before sourcing.
 
 ## Inputs to confirm
 
@@ -38,16 +51,15 @@ Confirm or infer these before execution:
 - create a new sheet vs update an existing one
 - whether the work must stay public-source-only
 - whether LinkedIn URLs should be filled immediately
-- whether to run deep LinkedIn enrichment on verified profile URLs
-- if enriching, whether there is an existing Gumloop flow or API configuration to use
 - if enriching an existing sheet, which rows or batches should be enriched
+- whether team context materially changes the target profile and justifies a team brief
 
 If the user does not specify:
 - default to **public-source-only**
 - default batch size to **20**
 - default to creating a new sheet
 - default to resolving LinkedIn URLs during the same run
-- default deep LinkedIn enrichment to **off** unless the user asks for it, because it is slower and may consume Gumloop credits
+- default to running Gumloop enrichment for rows with verified LinkedIn URLs during the same run
 
 ## Recommended agents
 
@@ -62,15 +74,16 @@ Use these agents deliberately:
    - resolve LinkedIn profile URLs
    - add match confidence and short verification notes
    - prefer `NOT FOUND` or `Needs manual review` over weak guesses
-   - use Perplexity or other web search only to discover or verify the public LinkedIn profile URL
-   - do **not** use Perplexity/perplexity_fetch as the source of record for LinkedIn profile contents
-   - when Gumloop enrichment is requested and configured, call the explicit Gumloop flow/API for rows with verified LinkedIn URLs and map the returned fields into sheet columns
+   - only pass verified LinkedIn URLs into Gumloop-backed enrichment
 
 3. `workspace-executor`
    - create or update the spreadsheet artifact
+   - use Pi Google Workspace tools for straightforward Sheets / Drive work
    - use `gws` via `bash` for structural changes, create, multi-row writes, and verification
 
-Use `team-brief-researcher` or `shopify-researcher` only if team context materially changes the target profile.
+4. `team-brief-researcher`
+   - use only when team context materially changes the target profile
+   - keep the brief recruiter-safe and evidence-based
 
 ## Default artifact shape
 
@@ -87,7 +100,7 @@ Create these tabs unless the user asks for something different:
 
 ### Prospects columns
 
-Use this exact default header row:
+Use this default header row:
 
 1. `Batch`
 2. `Name`
@@ -99,9 +112,6 @@ Use this exact default header row:
 8. `Confidence`
 9. `Segment`
 10. `Verification notes`
-
-If the user asks for deep LinkedIn enrichment, append these optional columns after the default header row rather than replacing it:
-
 11. `First Name`
 12. `Last Name`
 13. `Job Title`
@@ -140,7 +150,17 @@ Every prospect row should map cleanly to:
 - `segment`
 - `verification_notes`
 
-Translate this schema into the spreadsheet columns above.
+Gumloop enrichment should map into:
+- `first_name`
+- `last_name`
+- `job_title`
+- `headline`
+- `about`
+- `city`
+- `state`
+- `country`
+- `work_experience`
+- `education`
 
 ## Workflow
 
@@ -154,6 +174,12 @@ Use `recruiting-researcher` to produce:
 - direct-fit vs adjacent-fit sourcing angles
 - disqualifiers / risky mismatches
 - a first-pass batch plan
+
+If team context materially changes the target profile, use `team-brief-researcher` to add:
+- team mission
+- major problem space
+- collaborators / stakeholders
+- sourcing angles shaped by the team context
 
 Keep the brief concise and recruiter-safe.
 
@@ -191,18 +217,14 @@ Rules:
 - only fill `LinkedIn Profile` when the match is at least reasonably supported
 - Perplexity is acceptable for URL discovery/verification, but not for direct LinkedIn profile-content extraction
 
-### 3.5) Optional deep LinkedIn enrichment via Gumloop
+### 4) Enrich verified LinkedIn profiles via Gumloop
 
-Run this step only when the user asks for richer profile data or asks to enrich an existing sheet.
+Run Gumloop enrichment for rows with verified `LinkedIn Profile` URLs.
 
 Preconditions:
 - the row has a verified `LinkedIn Profile` URL
-- a Gumloop flow/API path is available
-- the user is okay with the added latency and credit usage
-- prefer loading Gumloop credentials from environment variables:
-  - `GUMLOOP_API_KEY`
-  - `GUMLOOP_USER_ID`
-  - `GUMLOOP_SAVED_ITEM_ID`
+- `GUMLOOP_API_KEY`, `GUMLOOP_USER_ID`, and `GUMLOOP_SAVED_ITEM_ID` are available
+- the workflow uses the shared recruiter Gumloop pipeline
 
 Critical distinction:
 - use Perplexity or other web search only to **find/verify the LinkedIn URL**
@@ -212,7 +234,7 @@ Critical distinction:
 Recommended API pattern:
 - start the Gumloop pipeline with a single input named `LinkedIn URL`
 - pass the verified LinkedIn URL via `pipeline_inputs`
-- use `GUMLOOP_API_KEY`, `GUMLOOP_USER_ID`, and `GUMLOOP_SAVED_ITEM_ID` from the environment when available
+- use `GUMLOOP_API_KEY`, `GUMLOOP_USER_ID`, and `GUMLOOP_SAVED_ITEM_ID` from the environment
 - poll the run until it reaches `DONE`
 - read the returned outputs and map them into sheet columns
 - if the run fails because `LinkedIn URL` is empty or invalid, mark the row for manual review rather than substituting web-search-derived profile content
@@ -245,19 +267,18 @@ Expected output fields from the current flow:
 
 Execution guidance:
 - enrich only rows that already have verified LinkedIn URLs
-- when updating an existing sheet, append the enrichment columns after the current sourcing columns unless the user asks for a different layout
-- preserve user-added columns whenever practical
+- preserve user-added columns whenever practical when updating an existing sheet
 - if a Gumloop run fails for a row, leave the row in place and record a short note rather than blocking the entire batch
-- prefer batch sizes small enough to verify easily, especially on the first run
+- keep first-run batch sizes small enough to verify easily
 
-### 4) Create or update the spreadsheet
+### 5) Create or update the spreadsheet
 
 Use `workspace-executor`.
 
 For Sheets operations:
 - inspect metadata first for unfamiliar spreadsheets
-- prefer `gws` via `bash` for create, batch writes, structural changes, and large updates
-- use `google_sheets` directly only for simple reads/writes when the method shape is obvious
+- use Pi Google Workspace tools (`google_sheets`, `google_drive`) for simple reads, writes, and lookups
+- use `gws` via `bash` for create, batch writes, structural changes, and larger updates
 - if the wrapper is unclear or fails once, switch to `gws`
 
 Preferred sequence:
@@ -266,17 +287,31 @@ Preferred sequence:
 3. write headers to `Prospects`
 4. write brief rows to `Brief`
 5. write prospect rows in one batch update when practical
-6. if deep LinkedIn enrichment is requested, append the enrichment headers and write only the rows being enriched
+6. write Gumloop enrichment values into the enrichment columns for rows that resolved successfully
 7. verify by reading back the written range
 
-### 5) Verify and report
+### 6) Verify and report
 
 After writing:
 - read back the key written range(s)
 - confirm row counts
 - call out any `NOT FOUND` or manual-review rows
-- if enrichment was run, call out any rows that failed Gumloop enrichment or were skipped due to missing LinkedIn URLs
+- call out any rows that failed Gumloop enrichment or were skipped due to missing LinkedIn URLs
 - return the sheet URL / ID
+
+## Google access model
+
+Support both approaches:
+
+### Standard employee path
+- use Pi with Google Workspace tools enabled
+- prefer this for straightforward Drive and Sheets operations
+
+### CLI fallback path
+- use `gws` via `bash`
+- prefer this for spreadsheet creation, tab creation, batch writes, and structural operations
+
+If both are available, use the simplest reliable path for the job.
 
 ## gws patterns
 
@@ -311,7 +346,7 @@ gws sheets spreadsheets values batchUpdate --params '{
 }' --json '{
   "valueInputOption": "USER_ENTERED",
   "data": [
-    {"range": "'\''Prospects'\''!A1", "values": [["Batch", "Name", "LinkedIn Profile", "Current company", "Likely current title", "Public location", "Why relevant", "Confidence", "Segment", "Verification notes"]]},
+    {"range": "'\''Prospects'\''!A1", "values": [["Batch", "Name", "LinkedIn Profile", "Current company", "Likely current title", "Public location", "Why relevant", "Confidence", "Segment", "Verification notes", "First Name", "Last Name", "Job Title", "Headline", "About", "City", "State", "Country", "Work Experience", "Education"]]},
     {"range": "'\''Brief'\''!A1", "values": [["Field", "Value"], ["Role / req", "..."]]}
   ]
 }'
@@ -320,7 +355,7 @@ gws sheets spreadsheets values batchUpdate --params '{
 ### Verify a write
 
 ```bash
-gws sheets +read --spreadsheet "SPREADSHEET_ID" --range "'Prospects'!A1:J10"
+gws sheets +read --spreadsheet "SPREADSHEET_ID" --range "'Prospects'!A1:T10"
 ```
 
 ## Output contract
@@ -331,10 +366,9 @@ Return all of the following:
 - sheet title
 - spreadsheet ID and URL
 - batches produced and total prospect count
-- whether deep LinkedIn enrichment was run
 - ranges written or updated
 - rows with `NOT FOUND` or `Needs manual review`
-- rows skipped or failed during enrichment, if any
+- rows skipped or failed during Gumloop enrichment, if any
 - concise next-step recommendations
 
 ## Guardrails
@@ -346,7 +380,6 @@ Return all of the following:
 - When the market is thin, separate direct-fit from adjacent-fit profiles.
 - If the user asks for additional prospects, exclude already-listed names.
 - If updating an existing sheet, preserve user-added columns unless explicitly asked to restructure them.
-- Deep LinkedIn enrichment should be opt-in by default because it may consume Gumloop credits and returns long-form text.
 - Do not run Gumloop enrichment on weakly matched or unverified LinkedIn URLs.
-- If Gumloop enrichment is the intended path, do not fall back to direct LinkedIn page fetching via Perplexity/perplexity_fetch; stop and ask for the Gumloop webhook/API details instead.
+- Do not fall back to direct LinkedIn page fetching via Perplexity/perplexity_fetch for profile-content extraction.
 - If `GUMLOOP_API_KEY`, `GUMLOOP_USER_ID`, or `GUMLOOP_SAVED_ITEM_ID` are missing, stop and ask for the missing config rather than improvising.
