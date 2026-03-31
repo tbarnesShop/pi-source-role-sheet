@@ -1,6 +1,23 @@
 # pi-source-role-sheet
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub repo](https://img.shields.io/badge/GitHub-pi--source--role--sheet-181717?logo=github)](https://github.com/tbarnesShop/pi-source-role-sheet)
+
 Shareable Pi skill pack for sourcing a role into a recruiter-friendly Google Sheet.
+
+## Quick start
+
+```bash
+git clone https://github.com/tbarnesShop/pi-source-role-sheet.git
+cd pi-source-role-sheet
+./install.sh
+```
+
+Then restart Pi if it was already running and ask something like:
+
+- `Source a batch of 20 senior backend engineers in Toronto into a new Google Sheet`
+- `Create a prospect sheet for staff data engineers in North America`
+- `Enrich this existing prospect sheet with verified LinkedIn URLs`
 
 ## What’s included
 
