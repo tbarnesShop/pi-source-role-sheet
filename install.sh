@@ -55,11 +55,15 @@ Next steps:
    - devx pi
 2. Make sure Pi has Google Workspace / Sheets access.
 3. Make sure Perplexity access is available for LinkedIn URL lookup.
-4. Optional for deep LinkedIn enrichment: configure the Gumloop pipeline first:
-   - https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
-   Then set:
-   - GUMLOOP_API_KEY
-   - GUMLOOP_USER_ID
-   - GUMLOOP_SAVED_ITEM_ID
+4. Optional for deep LinkedIn enrichment:
+   - Copy the Gumloop pipeline template:
+     https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
+   - Copy your webhook URL from Gumloop
+   - Run:
+     ./scripts/parse-gumloop-webhook.sh '<gumloop-webhook-url>'
+   - Then set:
+     GUMLOOP_API_KEY
+     GUMLOOP_USER_ID
+     GUMLOOP_SAVED_ITEM_ID
 5. Restart Pi if it was already running before installation.
 EOF

@@ -73,11 +73,17 @@ devx pi
 
 Only do this if you want deep LinkedIn enrichment. The default sourcing workflow does not require it.
 
-Set up the Gumloop pipeline here:
+1. Copy the Gumloop pipeline template into your own Gumloop workspace:
+   - https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
+2. In your copied Gumloop pipeline, find the webhook / start pipeline URL.
+3. Copy that webhook URL.
+4. Run the helper script locally to extract the env vars:
 
-- https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
+```bash
+./scripts/parse-gumloop-webhook.sh 'https://api.gumloop.com/api/v1/start_pipeline?api_key=...&user_id=...&saved_item_id=...'
+```
 
-Then export these environment variables before launching Pi:
+That prints the export commands you should run before launching Pi:
 
 ```bash
 export GUMLOOP_API_KEY=...
@@ -85,7 +91,9 @@ export GUMLOOP_USER_ID=...
 export GUMLOOP_SAVED_ITEM_ID=...
 ```
 
-You can copy `.env.example` as a starting point.
+You can also copy `.env.example` as a starting point.
+
+Do not commit the real webhook URL or real Gumloop credentials to git.
 
 ### 6. Test the install
 
@@ -103,6 +111,7 @@ Try one of these prompts in Pi:
 - `agents/workspace-executor.md`
 - `install.sh`
 - `.env.example`
+- `scripts/parse-gumloop-webhook.sh`
 
 ## What this skill does
 
@@ -178,6 +187,7 @@ If needed, enable skill commands in Pi settings:
 - Deep LinkedIn enrichment is intentionally opt-in.
 - The skill is designed to prefer public-source-only evidence by default.
 - The skill depends on the three bundled custom agents, so share them together.
+- The Gumloop webhook URL contains credential-like query params. Treat it as sensitive.
 
 ## Updating
 
@@ -199,6 +209,8 @@ pi-source-role-sheet/
 │   ├── recruiting-researcher.md
 │   ├── candidate-enricher.md
 │   └── workspace-executor.md
+├── scripts/
+│   └── parse-gumloop-webhook.sh
 └── skills/
     └── source-role-sheet/
         └── SKILL.md
