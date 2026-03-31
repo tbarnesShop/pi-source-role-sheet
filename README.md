@@ -19,6 +19,82 @@ Then restart Pi if it was already running and ask something like:
 - `Create a prospect sheet for staff data engineers in North America`
 - `Enrich this existing prospect sheet with verified LinkedIn URLs`
 
+## Step-by-step install
+
+### 1. Confirm Shopify Pi is available
+
+This skill pack is designed to run with Shopify Pi via:
+
+```bash
+devx pi --version
+devx pi
+```
+
+### 2. Install the Pi extensions you need
+
+This skill relies on Google Workspace access for Sheets writes and Perplexity for public LinkedIn URL discovery.
+
+A common internal setup is to install the shared Pi extension bundle:
+
+```bash
+pi install https://github.com/shopify-playground/shop-pi-fy
+```
+
+Then start Pi with:
+
+```bash
+devx pi
+```
+
+### 3. Clone this repo and install the skill pack
+
+```bash
+git clone https://github.com/tbarnesShop/pi-source-role-sheet.git
+cd pi-source-role-sheet
+./install.sh
+```
+
+This copies the skill and bundled agents into `~/.pi/agent/...`.
+
+### 4. Authenticate the tools you plan to use
+
+At minimum, make sure your Pi environment can access:
+
+- Google Workspace / Sheets
+- Perplexity
+
+If Pi was already running before install, restart it with:
+
+```bash
+devx pi
+```
+
+### 5. Optional: set up Gumloop for deep LinkedIn enrichment
+
+Only do this if you want deep LinkedIn enrichment. The default sourcing workflow does not require it.
+
+Set up the Gumloop pipeline here:
+
+- https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
+
+Then export these environment variables before launching Pi:
+
+```bash
+export GUMLOOP_API_KEY=...
+export GUMLOOP_USER_ID=...
+export GUMLOOP_SAVED_ITEM_ID=...
+```
+
+You can copy `.env.example` as a starting point.
+
+### 6. Test the install
+
+Try one of these prompts in Pi:
+
+- `Source a batch of 20 senior backend engineers in Toronto into a new Google Sheet`
+- `Create a prospect sheet for staff data engineers in North America`
+- `Enrich this existing prospect sheet with verified LinkedIn URLs`
+
 ## What’s included
 
 - `skills/source-role-sheet/SKILL.md`
@@ -53,6 +129,10 @@ Optional Gumloop environment variables:
 - `GUMLOOP_API_KEY`
 - `GUMLOOP_USER_ID`
 - `GUMLOOP_SAVED_ITEM_ID`
+
+Gumloop pipeline to configure for enrichment:
+
+- https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
 
 ## Install
 

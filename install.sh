@@ -55,7 +55,9 @@ Next steps:
    - devx pi
 2. Make sure Pi has Google Workspace / Sheets access.
 3. Make sure Perplexity access is available for LinkedIn URL lookup.
-4. Optionally configure Gumloop env vars for deep enrichment:
+4. Optional for deep LinkedIn enrichment: configure the Gumloop pipeline first:
+   - https://www.gumloop.com/pipeline?workbook_id=3Pku5WWmdYaZ4nHUxjntJP
+   Then set:
    - GUMLOOP_API_KEY
    - GUMLOOP_USER_ID
    - GUMLOOP_SAVED_ITEM_ID
